@@ -3,7 +3,7 @@ export async function getLocation(ip: string) {
 	try {
 		const response = await fetch(`https://ipapi.co/${ip}/json/`);
 		const data = await response.json();
-		return data.city || "Unknown";
+		return data || "Unknown";
 	} catch (error) {
 		console.error("Error fetching location:", error);
 		return "Unknown";

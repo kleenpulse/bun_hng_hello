@@ -1,9 +1,13 @@
-import { serve } from "bun";
+import ipify from "ipify";
 import { getLocation } from "./utils/get-location";
+import { getTemperature } from "./utils/get-temp";
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
-serve({
+let IPAddress = await ipify({ useIPv6: false });
+const location = await getLocation(IPAddress);
+
+Bun.serve({
 	port: PORT,
 	async fetch(request) {
 		const { method } = request;
@@ -11,17 +15,18 @@ serve({
 
 		if (method === "GET" && pathname.startsWith("/api/hello")) {
 			const name = searchParams.get("visitor_name") || "Guest";
-			let sourceIP = this.requestIP(request);
-			console.log("SOURCE IP", sourceIP);
-			let IPAdress =
-				request.headers.get("x-forwarded-for") ||
-				sourceIP?.address ||
-				"127.0.0.1";
-			const location = await getLocation(IPAdress);
+
+			const temperature = await getTemperature(
+				location.latitude,
+				location.longitude
+			);
+
 			const response = {
-				client_ip: IPAdress.length > 3 ? IPAdress : "127.0.0.1",
-				greeting: `Hello, ${name.trim()}!`,
-				location,
+				client_ip: IPAddress.length > 3 ? IPAddress : "127.0.0.1",
+				location: location.city,
+				greeting: `Hello, ${name.trim()}!, the temperature is ${temperature} degrees Celsius in ${
+					location.city
+				}.`,
 			};
 
 			return new Response(JSON.stringify(response), {
